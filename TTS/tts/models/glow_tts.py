@@ -1,3 +1,4 @@
+import logging
 import math
 from typing import Dict, List, Tuple, Union
 
@@ -6,6 +7,7 @@ from coqpit import Coqpit
 from torch import nn
 from torch.cuda.amp.autocast_mode import autocast
 from torch.nn import functional as F
+from trainer.io import load_fsspec
 
 from TTS.tts.configs.glow_tts_config import GlowTTSConfig
 from TTS.tts.layers.glow_tts.decoder import Decoder
@@ -16,7 +18,8 @@ from TTS.tts.utils.speakers import SpeakerManager
 from TTS.tts.utils.synthesis import synthesis
 from TTS.tts.utils.text.tokenizer import TTSTokenizer
 from TTS.tts.utils.visual import plot_alignment, plot_spectrogram
-from TTS.utils.io import load_fsspec
+
+logger = logging.getLogger(__name__)
 
 
 class GlowTTS(BaseTTS):
@@ -53,7 +56,7 @@ class GlowTTS(BaseTTS):
         >>> from TTS.tts.configs.glow_tts_config import GlowTTSConfig
         >>> from TTS.tts.models.glow_tts import GlowTTS
         >>> config = GlowTTSConfig()
-        >>> model = GlowTTS.init_from_config(config, verbose=False)
+        >>> model = GlowTTS.init_from_config(config)
     """
 
     def __init__(
@@ -127,7 +130,7 @@ class GlowTTS(BaseTTS):
                 ), " [!] d-vector dimension mismatch b/w config and speaker manager."
         # init speaker embedding layer
         if config.use_speaker_embedding and not config.use_d_vector_file:
-            print(" > Init speaker_embedding layer.")
+            logger.info("Init speaker_embedding layer.")
             self.embedded_speaker_dim = self.hidden_channels_enc
             self.emb_g = nn.Embedding(self.num_speakers, self.hidden_channels_enc)
             nn.init.uniform_(self.emb_g.weight, -0.1, 0.1)
@@ -479,13 +482,13 @@ class GlowTTS(BaseTTS):
         Returns:
             Tuple[Dict, Dict]: Test figures and audios to be projected to Tensorboard.
         """
-        print(" | > Synthesizing test sentences.")
+        logger.info("Synthesizing test sentences.")
         test_audios = {}
         test_figures = {}
         test_sentences = self.config.test_sentences
         aux_inputs = self._get_test_aux_input()
         if len(test_sentences) == 0:
-            print(" | [!] No test sentences provided.")
+            logger.warning("No test sentences provided.")
         else:
             for idx, sen in enumerate(test_sentences):
                 outputs = synthesis(
@@ -540,18 +543,17 @@ class GlowTTS(BaseTTS):
         self.run_data_dep_init = trainer.total_steps_done < self.data_dep_init_steps
 
     @staticmethod
-    def init_from_config(config: "GlowTTSConfig", samples: Union[List[List], List[Dict]] = None, verbose=True):
+    def init_from_config(config: "GlowTTSConfig", samples: Union[List[List], List[Dict]] = None):
         """Initiate model from config
 
         Args:
             config (VitsConfig): Model config.
             samples (Union[List[List], List[Dict]]): Training samples to parse speaker ids for training.
                 Defaults to None.
-            verbose (bool): If True, print init messages. Defaults to True.
         """
         from TTS.utils.audio import AudioProcessor
 
-        ap = AudioProcessor.init_from_config(config, verbose)
+        ap = AudioProcessor.init_from_config(config)
         tokenizer, new_config = TTSTokenizer.init_from_config(config)
         speaker_manager = SpeakerManager.init_from_config(config, samples)
         return GlowTTS(new_config, ap, tokenizer, speaker_manager)

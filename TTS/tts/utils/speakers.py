@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from typing import Any, Dict, List, Union
 
@@ -9,6 +10,8 @@ from coqpit import Coqpit
 
 from TTS.config import get_from_config_or_model_args_with_default
 from TTS.tts.utils.managers import EmbeddingManager
+
+logger = logging.getLogger(__name__)
 
 
 class SpeakerManager(EmbeddingManager):
@@ -170,7 +173,9 @@ def get_speaker_manager(c: Coqpit, data: List = None, restore_path: str = None, 
             if c.use_d_vector_file:
                 # restore speaker manager with the embedding file
                 if not os.path.exists(speakers_file):
-                    print("WARNING: speakers.json was not found in restore_path, trying to use CONFIG.d_vector_file")
+                    logger.warning(
+                        "speakers.json was not found in %s, trying to use CONFIG.d_vector_file", restore_path
+                    )
                     if not os.path.exists(c.d_vector_file):
                         raise RuntimeError(
                             "You must copy the file speakers.json to restore_path, or set a valid file in CONFIG.d_vector_file"
@@ -193,16 +198,16 @@ def get_speaker_manager(c: Coqpit, data: List = None, restore_path: str = None, 
             speaker_manager.load_ids_from_file(c.speakers_file)
 
         if speaker_manager.num_speakers > 0:
-            print(
-                " > Speaker manager is loaded with {} speakers: {}".format(
-                    speaker_manager.num_speakers, ", ".join(speaker_manager.name_to_id)
-                )
+            logger.info(
+                "Speaker manager is loaded with %d speakers: %s",
+                speaker_manager.num_speakers,
+                ", ".join(speaker_manager.name_to_id),
             )
 
         # save file if path is defined
         if out_path:
             out_file_path = os.path.join(out_path, "speakers.json")
-            print(f" > Saving `speakers.json` to {out_file_path}.")
+            logger.info("Saving `speakers.json` to %s", out_file_path)
             if c.use_d_vector_file and c.d_vector_file:
                 speaker_manager.save_embeddings_to_file(out_file_path)
             else:

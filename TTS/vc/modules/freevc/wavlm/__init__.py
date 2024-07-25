@@ -1,10 +1,13 @@
+import logging
 import os
 import urllib.request
 
 import torch
+from trainer.io import get_user_data_dir
 
-from TTS.utils.generic_utils import get_user_data_dir
 from TTS.vc.modules.freevc.wavlm.wavlm import WavLM, WavLMConfig
+
+logger = logging.getLogger(__name__)
 
 model_uri = "https://github.com/coqui-ai/TTS/releases/download/v0.13.0_models/WavLM-Large.pt"
 
@@ -20,7 +23,7 @@ def get_wavlm(device="cpu"):
 
     output_path = os.path.join(output_path, "WavLM-Large.pt")
     if not os.path.exists(output_path):
-        print(f" > Downloading WavLM model to {output_path} ...")
+        logger.info("Downloading WavLM model to %s ...", output_path)
         urllib.request.urlretrieve(model_uri, output_path)
 
     checkpoint = torch.load(output_path, map_location=torch.device(device))

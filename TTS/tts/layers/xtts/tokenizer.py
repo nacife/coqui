@@ -1,24 +1,26 @@
+import logging
 import os
 import re
 import textwrap
 from functools import cached_property
 
-import pypinyin
 import torch
-from hangul_romanize import Transliter
-from hangul_romanize.rule import academic
 from num2words import num2words
 from spacy.lang.ar import Arabic
 from spacy.lang.en import English
 from spacy.lang.es import Spanish
+from spacy.lang.hi import Hindi
 from spacy.lang.ja import Japanese
 from spacy.lang.zh import Chinese
 from tokenizers import Tokenizer
 
 from TTS.tts.layers.xtts.zh_num2words import TextNorm as zh_num2words
 
+logger = logging.getLogger(__name__)
+
 
 def get_spacy_lang(lang):
+    """Return Spacy language used for sentence splitting."""
     if lang == "zh":
         return Chinese()
     elif lang == "ja":
@@ -27,8 +29,10 @@ def get_spacy_lang(lang):
         return Arabic()
     elif lang == "es":
         return Spanish()
+    elif lang == "hi":
+        return Hindi()
     else:
-        # For most languages, Enlish does the job
+        # For most languages, English does the job
         return English()
 
 
@@ -570,6 +574,10 @@ def basic_cleaners(text):
 
 
 def chinese_transliterate(text):
+    try:
+        import pypinyin
+    except ImportError as e:
+        raise ImportError("Chinese requires: pypinyin") from e
     return "".join(
         [p[0] for p in pypinyin.pinyin(text, style=pypinyin.Style.TONE3, heteronym=False, neutral_tone_with_five=True)]
     )
@@ -582,6 +590,11 @@ def japanese_cleaners(text, katsu):
 
 
 def korean_transliterate(text):
+    try:
+        from hangul_romanize import Transliter
+        from hangul_romanize.rule import academic
+    except ImportError as e:
+        raise ImportError("Korean requires: hangul_romanize") from e
     r = Transliter(academic)
     return r.translit(text)
 
@@ -611,6 +624,7 @@ class VoiceBpeTokenizer:
             "ja": 71,
             "hu": 224,
             "ko": 95,
+            "hi": 150,
         }
 
     @cached_property
@@ -623,8 +637,10 @@ class VoiceBpeTokenizer:
         lang = lang.split("-")[0]  # remove the region
         limit = self.char_limits.get(lang, 250)
         if len(txt) > limit:
-            print(
-                f"[!] Warning: The text length exceeds the character limit of {limit} for language '{lang}', this might cause truncated audio."
+            logger.warning(
+                "The text length exceeds the character limit of %d for language '%s', this might cause truncated audio.",
+                limit,
+                lang,
             )
 
     def preprocess_text(self, txt, lang):

@@ -164,7 +164,7 @@ class Bark(BaseTTS):
         return audio_arr, [x_semantic, c, f]
 
     def generate_voice(self, audio, speaker_id, voice_dir):
-        """Generate a voice from the given audio and text.
+        """Generate a voice from the given audio.
 
         Args:
             audio (str): Path to the audio file.
@@ -174,7 +174,7 @@ class Bark(BaseTTS):
         if voice_dir is not None:
             voice_dirs = [voice_dir]
             try:
-                _ = load_voice(speaker_id, voice_dirs)
+                _ = load_voice(self, speaker_id, voice_dirs)
             except (KeyError, FileNotFoundError):
                 output_path = os.path.join(voice_dir, speaker_id + ".npz")
                 os.makedirs(voice_dir, exist_ok=True)
@@ -225,14 +225,11 @@ class Bark(BaseTTS):
 
         return return_dict
 
-    def eval_step(self):
-        ...
+    def eval_step(self): ...
 
-    def forward(self):
-        ...
+    def forward(self): ...
 
-    def inference(self):
-        ...
+    def inference(self): ...
 
     @staticmethod
     def init_from_config(config: "BarkConfig", **kwargs):  # pylint: disable=unused-argument

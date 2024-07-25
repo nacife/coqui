@@ -6,24 +6,11 @@ from torch.nn.utils.parametrizations import weight_norm
 from torch.nn.utils.parametrize import remove_parametrizations
 
 import TTS.vc.modules.freevc.commons as commons
-from TTS.vc.modules.freevc.commons import get_padding, init_weights
+from TTS.tts.layers.generic.normalization import LayerNorm2
+from TTS.vc.modules.freevc.commons import init_weights
+from TTS.vocoder.models.hifigan_generator import get_padding
 
 LRELU_SLOPE = 0.1
-
-
-class LayerNorm(nn.Module):
-    def __init__(self, channels, eps=1e-5):
-        super().__init__()
-        self.channels = channels
-        self.eps = eps
-
-        self.gamma = nn.Parameter(torch.ones(channels))
-        self.beta = nn.Parameter(torch.zeros(channels))
-
-    def forward(self, x):
-        x = x.transpose(1, -1)
-        x = F.layer_norm(x, (self.channels,), self.gamma, self.beta, self.eps)
-        return x.transpose(1, -1)
 
 
 class ConvReluNorm(nn.Module):
@@ -40,11 +27,11 @@ class ConvReluNorm(nn.Module):
         self.conv_layers = nn.ModuleList()
         self.norm_layers = nn.ModuleList()
         self.conv_layers.append(nn.Conv1d(in_channels, hidden_channels, kernel_size, padding=kernel_size // 2))
-        self.norm_layers.append(LayerNorm(hidden_channels))
+        self.norm_layers.append(LayerNorm2(hidden_channels))
         self.relu_drop = nn.Sequential(nn.ReLU(), nn.Dropout(p_dropout))
         for _ in range(n_layers - 1):
             self.conv_layers.append(nn.Conv1d(hidden_channels, hidden_channels, kernel_size, padding=kernel_size // 2))
-            self.norm_layers.append(LayerNorm(hidden_channels))
+            self.norm_layers.append(LayerNorm2(hidden_channels))
         self.proj = nn.Conv1d(hidden_channels, out_channels, 1)
         self.proj.weight.data.zero_()
         self.proj.bias.data.zero_()
@@ -56,48 +43,6 @@ class ConvReluNorm(nn.Module):
             x = self.norm_layers[i](x)
             x = self.relu_drop(x)
         x = x_org + self.proj(x)
-        return x * x_mask
-
-
-class DDSConv(nn.Module):
-    """
-    Dialted and Depth-Separable Convolution
-    """
-
-    def __init__(self, channels, kernel_size, n_layers, p_dropout=0.0):
-        super().__init__()
-        self.channels = channels
-        self.kernel_size = kernel_size
-        self.n_layers = n_layers
-        self.p_dropout = p_dropout
-
-        self.drop = nn.Dropout(p_dropout)
-        self.convs_sep = nn.ModuleList()
-        self.convs_1x1 = nn.ModuleList()
-        self.norms_1 = nn.ModuleList()
-        self.norms_2 = nn.ModuleList()
-        for i in range(n_layers):
-            dilation = kernel_size**i
-            padding = (kernel_size * dilation - dilation) // 2
-            self.convs_sep.append(
-                nn.Conv1d(channels, channels, kernel_size, groups=channels, dilation=dilation, padding=padding)
-            )
-            self.convs_1x1.append(nn.Conv1d(channels, channels, 1))
-            self.norms_1.append(LayerNorm(channels))
-            self.norms_2.append(LayerNorm(channels))
-
-    def forward(self, x, x_mask, g=None):
-        if g is not None:
-            x = x + g
-        for i in range(self.n_layers):
-            y = self.convs_sep[i](x * x_mask)
-            y = self.norms_1[i](y)
-            y = F.gelu(y)
-            y = self.convs_1x1[i](y)
-            y = self.norms_2[i](y)
-            y = F.gelu(y)
-            y = self.drop(y)
-            x = x + y
         return x * x_mask
 
 
@@ -314,24 +259,6 @@ class Flip(nn.Module):
             logdet = torch.zeros(x.size(0)).to(dtype=x.dtype, device=x.device)
             return x, logdet
         else:
-            return x
-
-
-class ElementwiseAffine(nn.Module):
-    def __init__(self, channels):
-        super().__init__()
-        self.channels = channels
-        self.m = nn.Parameter(torch.zeros(channels, 1))
-        self.logs = nn.Parameter(torch.zeros(channels, 1))
-
-    def forward(self, x, x_mask, reverse=False, **kwargs):
-        if not reverse:
-            y = self.m + torch.exp(self.logs) * x
-            y = y * x_mask
-            logdet = torch.sum(self.logs * x_mask, [1, 2])
-            return y, logdet
-        else:
-            x = (x - self.m) * torch.exp(-self.logs) * x_mask
             return x
 
 

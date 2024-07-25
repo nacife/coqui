@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from TTS.tts.utils.text.cleaners import english_cleaners, phoneme_cleaners
+from TTS.tts.utils.text.cleaners import english_cleaners, multilingual_phoneme_cleaners, phoneme_cleaners
 
 
 def test_time() -> None:
@@ -19,3 +19,8 @@ def test_currency() -> None:
 def test_expand_numbers() -> None:
     assert phoneme_cleaners("-1") == "minus one"
     assert phoneme_cleaners("1") == "one"
+
+
+def test_multilingual_phoneme_cleaners() -> None:
+    assert multilingual_phoneme_cleaners("(Hello)") == "Hello"
+    assert multilingual_phoneme_cleaners("1:") == "1,"

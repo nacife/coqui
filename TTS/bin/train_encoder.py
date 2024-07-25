@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import logging
 import os
 import sys
 import time
@@ -8,6 +9,7 @@ import traceback
 
 import torch
 from torch.utils.data import DataLoader
+from trainer.generic_utils import count_parameters, remove_experiment_folder
 from trainer.io import copy_model_files, save_best_model, save_checkpoint
 from trainer.torch import NoamLR
 from trainer.trainer_utils import get_optimizer
@@ -18,7 +20,7 @@ from TTS.encoder.utils.training import init_training
 from TTS.encoder.utils.visual import plot_embeddings
 from TTS.tts.datasets import load_tts_samples
 from TTS.utils.audio import AudioProcessor
-from TTS.utils.generic_utils import count_parameters, remove_experiment_folder
+from TTS.utils.generic_utils import ConsoleFormatter, setup_logger
 from TTS.utils.samplers import PerfectBatchSampler
 from TTS.utils.training import check_update
 
@@ -31,7 +33,7 @@ print(" > Using CUDA: ", use_cuda)
 print(" > Number of GPUs: ", num_gpus)
 
 
-def setup_loader(ap: AudioProcessor, is_val: bool = False, verbose: bool = False):
+def setup_loader(ap: AudioProcessor, is_val: bool = False):
     num_utter_per_class = c.num_utter_per_class if not is_val else c.eval_num_utter_per_class
     num_classes_in_batch = c.num_classes_in_batch if not is_val else c.eval_num_classes_in_batch
 
@@ -42,7 +44,6 @@ def setup_loader(ap: AudioProcessor, is_val: bool = False, verbose: bool = False
         voice_len=c.voice_len,
         num_utter_per_class=num_utter_per_class,
         num_classes_in_batch=num_classes_in_batch,
-        verbose=verbose,
         augmentation_config=c.audio_augmentation if not is_val else None,
         use_torch_spec=c.model_params.get("use_torch_spec", False),
     )
@@ -160,9 +161,6 @@ def train(model, optimizer, scheduler, criterion, data_loader, eval_data_loader,
             loader_time = time.time() - end_time
             global_step += 1
 
-            # setup lr
-            if c.lr_decay:
-                scheduler.step()
             optimizer.zero_grad()
 
             # dispatch data to GPU
@@ -180,6 +178,10 @@ def train(model, optimizer, scheduler, criterion, data_loader, eval_data_loader,
             loss.backward()
             grad_norm, _ = check_update(model, c.grad_clip)
             optimizer.step()
+
+            # setup lr
+            if c.lr_decay:
+                scheduler.step()
 
             step_time = time.time() - start_time
             epoch_time += step_time
@@ -278,9 +280,9 @@ def main(args):  # pylint: disable=redefined-outer-name
     # pylint: disable=redefined-outer-name
     meta_data_train, meta_data_eval = load_tts_samples(c.datasets, eval_split=True)
 
-    train_data_loader, train_classes, map_classid_to_classname = setup_loader(ap, is_val=False, verbose=True)
+    train_data_loader, train_classes, map_classid_to_classname = setup_loader(ap, is_val=False)
     if c.run_eval:
-        eval_data_loader, _, _ = setup_loader(ap, is_val=True, verbose=True)
+        eval_data_loader, _, _ = setup_loader(ap, is_val=True)
     else:
         eval_data_loader = None
 
@@ -316,6 +318,8 @@ def main(args):  # pylint: disable=redefined-outer-name
 
 
 if __name__ == "__main__":
+    setup_logger("TTS", level=logging.INFO, screen=True, formatter=ConsoleFormatter())
+
     args, c, OUT_PATH, AUDIO_PATH, c_logger, dashboard_logger = init_training()
 
     try:

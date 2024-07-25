@@ -1,13 +1,17 @@
-import struct
 from pathlib import Path
 from typing import Optional, Union
 
 # import webrtcvad
 import librosa
 import numpy as np
-from scipy.ndimage.morphology import binary_dilation
 
-from TTS.vc.modules.freevc.speaker_encoder.hparams import *
+from TTS.vc.modules.freevc.speaker_encoder.hparams import (
+    audio_norm_target_dBFS,
+    mel_n_channels,
+    mel_window_length,
+    mel_window_step,
+    sampling_rate,
+)
 
 int16_max = (2**15) - 1
 

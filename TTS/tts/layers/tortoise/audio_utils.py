@@ -1,3 +1,4 @@
+import logging
 import os
 from glob import glob
 from typing import Dict, List
@@ -9,6 +10,8 @@ import torchaudio
 from scipy.io.wavfile import read
 
 from TTS.utils.audio.torch_transforms import TorchSTFT
+
+logger = logging.getLogger(__name__)
 
 
 def load_wav_to_torch(full_path):
@@ -28,7 +31,7 @@ def check_audio(audio, audiopath: str):
     # Check some assumptions about audio range. This should be automatically fixed in load_wav_to_torch, but might not be in some edge cases, where we should squawk.
     # '2' is arbitrarily chosen since it seems like audio will often "overdrive" the [-1,1] bounds.
     if torch.any(audio > 2) or not torch.any(audio < 0):
-        print(f"Error with {audiopath}. Max={audio.max()} min={audio.min()}")
+        logger.error("Error with %s. Max=%.2f min=%.2f", audiopath, audio.max(), audio.min())
     audio.clip_(-1, 1)
 
 
@@ -136,7 +139,7 @@ def load_voices(voices: List[str], extra_voice_dirs: List[str] = []):
     for voice in voices:
         if voice == "random":
             if len(voices) > 1:
-                print("Cannot combine a random voice with a non-random voice. Just using a random voice.")
+                logger.warning("Cannot combine a random voice with a non-random voice. Just using a random voice.")
             return None, None
         clip, latent = load_voice(voice, extra_voice_dirs)
         if latent is None:

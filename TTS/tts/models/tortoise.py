@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 from contextlib import contextmanager
@@ -22,6 +23,8 @@ from TTS.tts.layers.tortoise.tokenizer import VoiceBpeTokenizer
 from TTS.tts.layers.tortoise.vocoder import VocConf, VocType
 from TTS.tts.layers.tortoise.wav2vec_alignment import Wav2VecAlignment
 from TTS.tts.models.base_tts import BaseTTS
+
+logger = logging.getLogger(__name__)
 
 
 def pad_or_truncate(t, length):
@@ -100,7 +103,7 @@ def fix_autoregressive_output(codes, stop_token, complain=True):
     stop_token_indices = (codes == stop_token).nonzero()
     if len(stop_token_indices) == 0:
         if complain:
-            print(
+            logger.warning(
                 "No stop tokens found in one of the generated voice clips. This typically means the spoken audio is "
                 "too long. In some cases, the output will still be good, though. Listen to it and if it is missing words, "
                 "try breaking up your input text."
@@ -713,10 +716,10 @@ class Tortoise(BaseTTS):
                 83  # This is the token for coding silence, which is fixed in place with "fix_autoregressive_output"
             )
             self.autoregressive = self.autoregressive.to(self.device)
-            if verbose:
-                print("Generating autoregressive samples..")
-            with self.temporary_cuda(self.autoregressive) as autoregressive, torch.autocast(
-                device_type="cuda", dtype=torch.float16, enabled=half
+            logger.info("Generating autoregressive samples..")
+            with (
+                self.temporary_cuda(self.autoregressive) as autoregressive,
+                torch.autocast(device_type="cuda", dtype=torch.float16, enabled=half),
             ):
                 for b in tqdm(range(num_batches), disable=not verbose):
                     codes = autoregressive.inference_speech(
@@ -737,8 +740,9 @@ class Tortoise(BaseTTS):
             self.autoregressive_batch_size = orig_batch_size  # in the case of single_sample
 
             clip_results = []
-            with self.temporary_cuda(self.clvp) as clvp, torch.autocast(
-                device_type="cuda", dtype=torch.float16, enabled=half
+            with (
+                self.temporary_cuda(self.clvp) as clvp,
+                torch.autocast(device_type="cuda", dtype=torch.float16, enabled=half),
             ):
                 for batch in tqdm(samples, disable=not verbose):
                     for i in range(batch.shape[0]):
@@ -773,8 +777,7 @@ class Tortoise(BaseTTS):
                 )
             del auto_conditioning
 
-            if verbose:
-                print("Transforming autoregressive outputs into audio..")
+            logger.info("Transforming autoregressive outputs into audio..")
             wav_candidates = []
             for b in range(best_results.shape[0]):
                 codes = best_results[b].unsqueeze(0)

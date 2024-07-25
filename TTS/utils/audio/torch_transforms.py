@@ -119,17 +119,19 @@ class TorchSTFT(nn.Module):  # pylint: disable=abstract-method
             padding = int((self.n_fft - self.hop_length) / 2)
             x = torch.nn.functional.pad(x, (padding, padding), mode="reflect")
         # B x D x T x 2
-        o = torch.stft(
-            x.squeeze(1),
-            self.n_fft,
-            self.hop_length,
-            self.win_length,
-            self.window,
-            center=True,
-            pad_mode="reflect",  # compatible with audio.py
-            normalized=self.normalized,
-            onesided=True,
-            return_complex=False,
+        o = torch.view_as_real(
+            torch.stft(
+                x.squeeze(1),
+                self.n_fft,
+                self.hop_length,
+                self.win_length,
+                self.window,
+                center=True,
+                pad_mode="reflect",  # compatible with audio.py
+                normalized=self.normalized,
+                onesided=True,
+                return_complex=True,
+            )
         )
         M = o[:, :, :, 0]
         P = o[:, :, :, 1]

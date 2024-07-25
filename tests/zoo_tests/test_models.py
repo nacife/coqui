@@ -4,11 +4,11 @@ import os
 import shutil
 
 import torch
+from trainer.io import get_user_data_dir
 
 from tests import get_tests_data_path, get_tests_output_path, run_cli
 from TTS.tts.utils.languages import LanguageManager
 from TTS.tts.utils.speakers import SpeakerManager
-from TTS.utils.generic_utils import get_user_data_dir
 from TTS.utils.manage import ModelManager
 
 MODELS_WITH_SEP_TESTS = [
@@ -50,13 +50,13 @@ def run_models(offset=0, step=1):
                 speaker_id = list(speaker_manager.name_to_id.keys())[0]
                 run_cli(
                     f"tts --model_name  {model_name} "
-                    f'--text "This is an example." --out_path "{output_path}" --speaker_idx "{speaker_id}" --language_idx "{language_id}" --progress_bar False'
+                    f'--text "This is an example." --out_path "{output_path}" --speaker_idx "{speaker_id}" --language_idx "{language_id}" --no-progress_bar'
                 )
             else:
                 # single-speaker model
                 run_cli(
                     f"tts --model_name  {model_name} "
-                    f'--text "This is an example." --out_path "{output_path}" --progress_bar False'
+                    f'--text "This is an example." --out_path "{output_path}" --no-progress_bar'
                 )
             # remove downloaded models
             shutil.rmtree(local_download_dir)
@@ -66,7 +66,7 @@ def run_models(offset=0, step=1):
             reference_wav = os.path.join(get_tests_data_path(), "ljspeech", "wavs", "LJ001-0032.wav")
             run_cli(
                 f"tts --model_name  {model_name} "
-                f'--out_path "{output_path}" --source_wav "{speaker_wav}" --target_wav "{reference_wav}" --progress_bar False'
+                f'--out_path "{output_path}" --source_wav "{speaker_wav}" --target_wav "{reference_wav}" --no-progress_bar'
             )
         else:
             # only download the model
@@ -83,14 +83,14 @@ def test_xtts():
         run_cli(
             "yes | "
             f"tts --model_name  tts_models/multilingual/multi-dataset/xtts_v1.1 "
-            f'--text "This is an example." --out_path "{output_path}" --progress_bar False --use_cuda True '
+            f'--text "This is an example." --out_path "{output_path}" --no-progress_bar --use_cuda '
             f'--speaker_wav "{speaker_wav}" --language_idx "en"'
         )
     else:
         run_cli(
             "yes | "
             f"tts --model_name  tts_models/multilingual/multi-dataset/xtts_v1.1 "
-            f'--text "This is an example." --out_path "{output_path}" --progress_bar False '
+            f'--text "This is an example." --out_path "{output_path}" --no-progress_bar '
             f'--speaker_wav "{speaker_wav}" --language_idx "en"'
         )
 
@@ -138,14 +138,14 @@ def test_xtts_v2():
         run_cli(
             "yes | "
             f"tts --model_name  tts_models/multilingual/multi-dataset/xtts_v2 "
-            f'--text "This is an example." --out_path "{output_path}" --progress_bar False --use_cuda True '
+            f'--text "This is an example." --out_path "{output_path}" --no-progress_bar --use_cuda '
             f'--speaker_wav "{speaker_wav}" "{speaker_wav_2}"  --language_idx "en"'
         )
     else:
         run_cli(
             "yes | "
             f"tts --model_name  tts_models/multilingual/multi-dataset/xtts_v2 "
-            f'--text "This is an example." --out_path "{output_path}" --progress_bar False '
+            f'--text "This is an example." --out_path "{output_path}" --no-progress_bar '
             f'--speaker_wav "{speaker_wav}" "{speaker_wav_2}" --language_idx "en"'
         )
 
@@ -215,12 +215,12 @@ def test_tortoise():
     if use_gpu:
         run_cli(
             f" tts --model_name  tts_models/en/multi-dataset/tortoise-v2 "
-            f'--text "This is an example." --out_path "{output_path}" --progress_bar False --use_cuda True'
+            f'--text "This is an example." --out_path "{output_path}" --no-progress_bar --use_cuda'
         )
     else:
         run_cli(
             f" tts --model_name  tts_models/en/multi-dataset/tortoise-v2 "
-            f'--text "This is an example." --out_path "{output_path}" --progress_bar False'
+            f'--text "This is an example." --out_path "{output_path}" --no-progress_bar'
         )
 
 
@@ -231,12 +231,12 @@ def test_bark():
     if use_gpu:
         run_cli(
             f" tts --model_name  tts_models/multilingual/multi-dataset/bark "
-            f'--text "This is an example." --out_path "{output_path}" --progress_bar False --use_cuda True'
+            f'--text "This is an example." --out_path "{output_path}" --no-progress_bar --use_cuda'
         )
     else:
         run_cli(
             f" tts --model_name  tts_models/multilingual/multi-dataset/bark "
-            f'--text "This is an example." --out_path "{output_path}" --progress_bar False'
+            f'--text "This is an example." --out_path "{output_path}" --no-progress_bar'
         )
 
 
@@ -249,7 +249,7 @@ def test_voice_conversion():
     output_path = os.path.join(get_tests_output_path(), "output.wav")
     run_cli(
         f"tts --model_name  {model_name}"
-        f" --out_path {output_path} --speaker_wav {speaker_wav} --reference_wav {reference_wav} --language_idx {language_id} --progress_bar False"
+        f" --out_path {output_path} --speaker_wav {speaker_wav} --reference_wav {reference_wav} --language_idx {language_id} --no-progress_bar"
     )
 
 

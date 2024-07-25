@@ -3,9 +3,6 @@
 ⓍTTS has important model changes that make cross-language voice cloning and multi-lingual speech generation super easy.
 There is no need for an excessive amount of training data that spans countless hours.
 
-This is the same model that powers [Coqui Studio](https://coqui.ai/), and [Coqui API](https://docs.coqui.ai/docs), however we apply
-a few tricks to make it faster and support streaming inference.
-
 ### Features
 - Voice cloning.
 - Cross-language voice cloning.
@@ -17,36 +14,50 @@ a few tricks to make it faster and support streaming inference.
 ### Updates with v2
 - Improved voice cloning.
 - Voices can be cloned with a single audio file or multiple audio files, without any effect on the runtime.
-- 2 new languages: Hungarian and Korean.
 - Across the board quality improvements.
 
 ### Code
 Current implementation only supports inference and GPT encoder training.
 
 ### Languages
-As of now, XTTS-v2 supports 16 languages: English (en), Spanish (es), French (fr), German (de), Italian (it), Portuguese (pt), Polish (pl), Turkish (tr), Russian (ru), Dutch (nl), Czech (cs), Arabic (ar), Chinese (zh-cn), Japanese (ja), Hungarian (hu) and Korean (ko).
+XTTS-v2 supports 17 languages:
 
-Stay tuned as we continue to add support for more languages. If you have any language requests, please feel free to reach out.
+- Arabic (ar)
+- Chinese (zh-cn)
+- Czech (cs)
+- Dutch (nl)
+- English (en)
+- French (fr)
+- German (de)
+- Hindi (hi)
+- Hungarian (hu)
+- Italian (it)
+- Japanese (ja)
+- Korean (ko)
+- Polish (pl)
+- Portuguese (pt)
+- Russian (ru)
+- Spanish (es)
+- Turkish (tr)
 
 ### License
 This model is licensed under [Coqui Public Model License](https://coqui.ai/cpml).
 
 ### Contact
-Come and join in our 🐸Community. We're active on [Discord](https://discord.gg/fBC58unbKE) and [Twitter](https://twitter.com/coqui_ai).
-You can also mail us at info@coqui.ai.
+Come and join in our 🐸Community. We're active on [Discord](https://discord.gg/fBC58unbKE) and [Github](https://github.com/idiap/coqui-ai-TTS/discussions).
 
 ### Inference
 
 #### 🐸TTS Command line
 
-You can check all supported languages with the following command: 
+You can check all supported languages with the following command:
 
 ```console
  tts --model_name tts_models/multilingual/multi-dataset/xtts_v2 \
     --list_language_idx
 ```
 
-You can check all Coqui available speakers with the following command: 
+You can check all Coqui available speakers with the following command:
 
 ```console
  tts --model_name tts_models/multilingual/multi-dataset/xtts_v2 \
@@ -61,7 +72,7 @@ You can do inference using one of the available speakers using the following com
      --text "It took me quite a long time to develop a voice, and now that I have it I'm not going to be silent." \
      --speaker_idx "Ana Florence" \
      --language_idx en \
-     --use_cuda true
+     --use_cuda
 ```
 
 ##### Clone a voice
@@ -74,7 +85,7 @@ You can clone a speaker voice using a single or multiple references:
      --text "Bugün okula gitmek istemiyorum." \
      --speaker_wav /path/to/target/speaker.wav \
      --language_idx tr \
-     --use_cuda true
+     --use_cuda
 ```
 
 ###### Multiple references
@@ -83,7 +94,7 @@ You can clone a speaker voice using a single or multiple references:
      --text "Bugün okula gitmek istemiyorum." \
      --speaker_wav /path/to/target/speaker.wav /path/to/target/speaker_2.wav /path/to/target/speaker_3.wav \
      --language_idx tr \
-     --use_cuda true
+     --use_cuda
 ```
 or for all wav files in a directory you can use:
 
@@ -92,7 +103,7 @@ or for all wav files in a directory you can use:
      --text "Bugün okula gitmek istemiyorum." \
      --speaker_wav /path/to/target/*.wav \
      --language_idx tr \
-     --use_cuda true
+     --use_cuda
 ```
 
 #### 🐸TTS API
@@ -280,7 +291,7 @@ To make the `XTTS_v2` fine-tuning more accessible for users that do not have goo
 
 The Colab Notebook is available [here](https://colab.research.google.com/drive/1GiI4_X724M8q2W-zZ-jXo7cWTV7RfaH-?usp=sharing).
 
-To learn how to use this Colab Notebook please check the [XTTS fine-tuning video]().
+To learn how to use this Colab Notebook please check the [XTTS fine-tuning video](https://www.youtube.com/watch?v=8tpDiiouGxc).
 
 If you are not able to acess the video you need to follow the steps:
 
@@ -294,7 +305,7 @@ If you are not able to acess the video you need to follow the steps:
 ##### Run demo locally
 
 To run the demo locally you need to do the following steps:
-1. Install   🐸 TTS following the instructions available [here](https://tts.readthedocs.io/en/dev/installation.html#installation).
+1. Install   🐸 TTS following the instructions available [here](https://coqui-tts.readthedocs.io/en/latest/installation.html).
 2. Install the Gradio demo requirements with the command `python3 -m pip install -r TTS/demos/xtts_ft_demo/requirements.txt`
 3. Run the Gradio demo using the command `python3 TTS/demos/xtts_ft_demo/xtts_demo.py`
 4. Follow the steps presented in the [tutorial video](https://www.youtube.com/watch?v=8tpDiiouGxc&feature=youtu.be) to be able to fine-tune and test the fine-tuned model.

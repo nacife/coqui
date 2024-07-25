@@ -10,11 +10,11 @@ from coqpit import Coqpit
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
+from trainer.io import load_fsspec
 
 from TTS.tts.utils.visual import plot_spectrogram
 from TTS.utils.audio import AudioProcessor
 from TTS.utils.audio.numpy_transforms import mulaw_decode
-from TTS.utils.io import load_fsspec
 from TTS.vocoder.datasets.wavernn_dataset import WaveRNNDataset
 from TTS.vocoder.layers.losses import WaveRNNLoss
 from TTS.vocoder.models.base_vocoder import BaseVocoder
@@ -91,7 +91,7 @@ class UpsampleNetwork(nn.Module):
         use_aux_net,
     ):
         super().__init__()
-        self.total_scale = np.cumproduct(upsample_scales)[-1]
+        self.total_scale = np.cumprod(upsample_scales)[-1]
         self.indent = pad * self.total_scale
         self.use_aux_net = use_aux_net
         if use_aux_net:
@@ -239,7 +239,7 @@ class Wavernn(BaseVocoder):
 
         if self.args.use_upsample_net:
             assert (
-                np.cumproduct(self.args.upsample_factors)[-1] == config.audio.hop_length
+                np.cumprod(self.args.upsample_factors)[-1] == config.audio.hop_length
             ), " [!] upsample scales needs to be equal to hop_length"
             self.upsample = UpsampleNetwork(
                 self.args.feat_dims,
@@ -623,7 +623,6 @@ class Wavernn(BaseVocoder):
             mode=config.model_args.mode,
             mulaw=config.model_args.mulaw,
             is_training=not is_eval,
-            verbose=verbose,
         )
         sampler = DistributedSampler(dataset, shuffle=True) if num_gpus > 1 else None
         loader = DataLoader(

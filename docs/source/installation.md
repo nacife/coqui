@@ -1,6 +1,6 @@
 # Installation
 
-🐸TTS supports python >=3.7 <3.11.0 and tested on Ubuntu 18.10, 19.10, 20.10.
+🐸TTS supports python >=3.9 <3.13.0 and was tested on Ubuntu 22.04.
 
 ## Using `pip`
 
@@ -9,13 +9,13 @@
 You can install from PyPI as follows:
 
 ```bash
-pip install TTS  # from PyPI
+pip install coqui-tts  # from PyPI
 ```
 
 Or install from Github:
 
 ```bash
-pip install git+https://github.com/coqui-ai/TTS  # from Github
+pip install git+https://github.com/idiap/coqui-ai-TTS  # from Github
 ```
 
 ## Installing From Source
@@ -23,11 +23,18 @@ pip install git+https://github.com/coqui-ai/TTS  # from Github
 This is recommended for development and more control over 🐸TTS.
 
 ```bash
-git clone https://github.com/coqui-ai/TTS/
-cd TTS
+git clone https://github.com/idiap/coqui-ai-TTS
+cd coqui-ai-TTS
 make system-deps  # only on Linux systems.
+
+# Install package and optional extras
 make install
+
+# Same as above + dev dependencies and pre-commit
+make install_dev
 ```
 
 ## On Windows
-If you are on Windows, 👑@GuyPaddock wrote installation instructions [here](https://stackoverflow.com/questions/66726331/
+If you are on Windows, 👑@GuyPaddock wrote installation instructions
+[here](https://stackoverflow.com/questions/66726331/) (note that these are out
+of date, e.g. you need to have at least Python 3.9)

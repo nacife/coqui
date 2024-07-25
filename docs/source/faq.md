@@ -3,7 +3,7 @@ We tried to collect common issues and questions we receive about 🐸TTS. It is 
 
 ## Errors with a pre-trained model. How can I resolve this?
 - Make sure you use the right commit version of 🐸TTS. Each pre-trained model has its corresponding version that needs to be used. It is defined on the model table.
-- If it is still problematic, post your problem on [Discussions](https://github.com/coqui-ai/TTS/discussions). Please give as many details as possible (error message, your TTS version, your TTS model and config.json etc.)
+- If it is still problematic, post your problem on [Discussions](https://github.com/idiap/coqui-ai-TTS/discussions). Please give as many details as possible (error message, your TTS version, your TTS model and config.json etc.)
 - If you feel like it's a bug to be fixed, then prefer Github issues with the same level of scrutiny.
 
 ## What are the requirements of a good 🐸TTS dataset?
@@ -16,7 +16,7 @@ We tried to collect common issues and questions we receive about 🐸TTS. It is 
 - If you need faster models, consider SpeedySpeech, GlowTTS or AlignTTS. Keep in mind that SpeedySpeech requires a pre-trained Tacotron or Tacotron2 model to compute text-to-speech alignments.
 
 ## How can I train my own `tts` model?
-0. Check your dataset with notebooks in [dataset_analysis](https://github.com/coqui-ai/TTS/tree/master/notebooks/dataset_analysis) folder. Use [this notebook](https://github.com/coqui-ai/TTS/blob/master/notebooks/dataset_analysis/CheckSpectrograms.ipynb) to find the right audio processing parameters. A better set of parameters results in a better audio synthesis.
+0. Check your dataset with notebooks in [dataset_analysis](https://github.com/idiap/coqui-ai-TTS/tree/main/notebooks/dataset_analysis) folder. Use [this notebook](https://github.com/idiap/coqui-ai-TTS/blob/main/notebooks/dataset_analysis/CheckSpectrograms.ipynb) to find the right audio processing parameters. A better set of parameters results in a better audio synthesis.
 
 1. Write your own dataset `formatter` in `datasets/formatters.py` or format your dataset as one of the supported datasets, like LJSpeech.
     A `formatter` parses the metadata file and converts a list of training samples.

@@ -1,4 +1,5 @@
 ### credit: https://github.com/dunky11/voicesmith
+import logging
 from typing import Callable, Dict, Tuple
 
 import torch
@@ -19,6 +20,8 @@ from TTS.tts.layers.delightful_tts.pitch_adaptor import PitchAdaptor
 from TTS.tts.layers.delightful_tts.variance_predictor import VariancePredictor
 from TTS.tts.layers.generic.aligner import AlignmentNetwork
 from TTS.tts.utils.helpers import generate_path, maximum_path, sequence_mask
+
+logger = logging.getLogger(__name__)
 
 
 class AcousticModel(torch.nn.Module):
@@ -217,7 +220,7 @@ class AcousticModel(torch.nn.Module):
     def _init_speaker_embedding(self):
         # pylint: disable=attribute-defined-outside-init
         if self.num_speakers > 0:
-            print(" > initialization of speaker-embedding layers.")
+            logger.info("Initialization of speaker-embedding layers.")
             self.embedded_speaker_dim = self.args.speaker_embedding_channels
             self.emb_g = nn.Embedding(self.num_speakers, self.embedded_speaker_dim)
 
@@ -362,7 +365,7 @@ class AcousticModel(torch.nn.Module):
 
         pos_encoding = positional_encoding(
             self.emb_dim,
-            max(token_embeddings.shape[1], max(mel_lens)),
+            max(token_embeddings.shape[1], *mel_lens),
             device=token_embeddings.device,
         )
         encoder_outputs = self.encoder(

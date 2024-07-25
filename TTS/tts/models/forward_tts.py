@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Union
 
@@ -5,6 +6,7 @@ import torch
 from coqpit import Coqpit
 from torch import nn
 from torch.cuda.amp.autocast_mode import autocast
+from trainer.io import load_fsspec
 
 from TTS.tts.layers.feed_forward.decoder import Decoder
 from TTS.tts.layers.feed_forward.encoder import Encoder
@@ -16,7 +18,8 @@ from TTS.tts.utils.helpers import average_over_durations, generate_path, maximum
 from TTS.tts.utils.speakers import SpeakerManager
 from TTS.tts.utils.text.tokenizer import TTSTokenizer
 from TTS.tts.utils.visual import plot_alignment, plot_avg_energy, plot_avg_pitch, plot_spectrogram
-from TTS.utils.io import load_fsspec
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -299,11 +302,11 @@ class ForwardTTS(BaseTTS):
         if config.use_d_vector_file:
             self.embedded_speaker_dim = config.d_vector_dim
             if self.args.d_vector_dim != self.args.hidden_channels:
-                #self.proj_g = nn.Conv1d(self.args.d_vector_dim, self.args.hidden_channels, 1)
+                # self.proj_g = nn.Conv1d(self.args.d_vector_dim, self.args.hidden_channels, 1)
                 self.proj_g = nn.Linear(in_features=self.args.d_vector_dim, out_features=self.args.hidden_channels)
         # init speaker embedding layer
         if config.use_speaker_embedding and not config.use_d_vector_file:
-            print(" > Init speaker_embedding layer.")
+            logger.info("Init speaker_embedding layer.")
             self.emb_g = nn.Embedding(self.num_speakers, self.args.hidden_channels)
             nn.init.uniform_(self.emb_g.weight, -0.1, 0.1)
 
@@ -404,13 +407,13 @@ class ForwardTTS(BaseTTS):
         # [B, T, C]
         x_emb = self.emb(x)
         # encoder pass
-	#o_en = self.encoder(torch.transpose(x_emb, 1, -1), x_mask)
+        # o_en = self.encoder(torch.transpose(x_emb, 1, -1), x_mask)
         o_en = self.encoder(torch.transpose(x_emb, 1, -1), x_mask, g)
         # speaker conditioning
         # TODO: try different ways of conditioning
-        if g is not None: 
+        if g is not None:
             if hasattr(self, "proj_g"):
-                g = self.proj_g(g.view(g.shape[0], -1)).unsqueeze(-1)            
+                g = self.proj_g(g.view(g.shape[0], -1)).unsqueeze(-1)
             o_en = o_en + g
         return o_en, x_mask, g, x_emb
 

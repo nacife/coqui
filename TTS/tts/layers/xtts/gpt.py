@@ -1,7 +1,6 @@
 # ported from: https://github.com/neonbjb/tortoise-tts
 
 import functools
-import math
 import random
 
 import torch
@@ -188,9 +187,9 @@ class GPT(nn.Module):
     def get_grad_norm_parameter_groups(self):
         return {
             "conditioning_encoder": list(self.conditioning_encoder.parameters()),
-            "conditioning_perceiver": list(self.conditioning_perceiver.parameters())
-            if self.use_perceiver_resampler
-            else None,
+            "conditioning_perceiver": (
+                list(self.conditioning_perceiver.parameters()) if self.use_perceiver_resampler else None
+            ),
             "gpt": list(self.gpt.parameters()),
             "heads": list(self.text_head.parameters()) + list(self.mel_head.parameters()),
         }

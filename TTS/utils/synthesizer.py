@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from typing import List
@@ -20,6 +21,8 @@ from TTS.utils.audio.numpy_transforms import save_wav
 from TTS.vc.models import setup_model as setup_vc_model
 from TTS.vocoder.models import setup_model as setup_vocoder_model
 from TTS.vocoder.utils.generic_utils import interpolate_vocoder_input
+
+logger = logging.getLogger(__name__)
 
 
 class Synthesizer(nn.Module):
@@ -218,7 +221,7 @@ class Synthesizer(nn.Module):
             use_cuda (bool): enable/disable CUDA use.
         """
         self.vocoder_config = load_config(model_config)
-        self.vocoder_ap = AudioProcessor(verbose=False, **self.vocoder_config.audio)
+        self.vocoder_ap = AudioProcessor(**self.vocoder_config.audio)
         self.vocoder_model = setup_vocoder_model(self.vocoder_config)
         self.vocoder_model.load_checkpoint(self.vocoder_config, model_file, eval=True)
         if use_cuda:
@@ -294,9 +297,9 @@ class Synthesizer(nn.Module):
         if text:
             sens = [text]
             if split_sentences:
-                print(" > Text splitted to sentences.")
                 sens = self.split_into_sentences(text)
-            print(sens)
+                logger.info("Text split into sentences.")
+            logger.info("Input: %s", sens)
 
         # handle multi-speaker
         if "voice_dir" in kwargs:
@@ -335,7 +338,7 @@ class Synthesizer(nn.Module):
         # handle multi-lingual
         language_id = None
         if self.tts_languages_file or (
-            hasattr(self.tts_model, "language_manager") 
+            hasattr(self.tts_model, "language_manager")
             and self.tts_model.language_manager is not None
             and not self.tts_config.model == "xtts"
         ):
@@ -420,7 +423,7 @@ class Synthesizer(nn.Module):
                         self.vocoder_config["audio"]["sample_rate"] / self.tts_model.ap.sample_rate,
                     ]
                     if scale_factor[1] != 1:
-                        print(" > interpolating tts model output.")
+                        logger.info("Interpolating TTS model output.")
                         vocoder_input = interpolate_vocoder_input(scale_factor, vocoder_input)
                     else:
                         vocoder_input = torch.tensor(vocoder_input).unsqueeze(0)  # pylint: disable=not-callable
@@ -484,7 +487,7 @@ class Synthesizer(nn.Module):
                     self.vocoder_config["audio"]["sample_rate"] / self.tts_model.ap.sample_rate,
                 ]
                 if scale_factor[1] != 1:
-                    print(" > interpolating tts model output.")
+                    logger.info("Interpolating TTS model output.")
                     vocoder_input = interpolate_vocoder_input(scale_factor, vocoder_input)
                 else:
                     vocoder_input = torch.tensor(vocoder_input).unsqueeze(0)  # pylint: disable=not-callable
@@ -500,6 +503,6 @@ class Synthesizer(nn.Module):
         # compute stats
         process_time = time.time() - start_time
         audio_time = len(wavs) / self.tts_config.audio["sample_rate"]
-        print(f" > Processing time: {process_time}")
-        print(f" > Real-time factor: {process_time / audio_time}")
+        logger.info("Processing time: %.3f", process_time)
+        logger.info("Real-time factor: %.3f", process_time / audio_time)
         return wavs

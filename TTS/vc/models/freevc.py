@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List, Optional, Tuple, Union
 
 import librosa
@@ -10,17 +11,21 @@ from torch.nn import functional as F
 from torch.nn.utils import spectral_norm
 from torch.nn.utils.parametrizations import weight_norm
 from torch.nn.utils.parametrize import remove_parametrizations
+from trainer.io import load_fsspec
 
 import TTS.vc.modules.freevc.commons as commons
 import TTS.vc.modules.freevc.modules as modules
+from TTS.tts.utils.helpers import sequence_mask
 from TTS.tts.utils.speakers import SpeakerManager
-from TTS.utils.io import load_fsspec
 from TTS.vc.configs.freevc_config import FreeVCConfig
 from TTS.vc.models.base_vc import BaseVC
-from TTS.vc.modules.freevc.commons import get_padding, init_weights
+from TTS.vc.modules.freevc.commons import init_weights
 from TTS.vc.modules.freevc.mel_processing import mel_spectrogram_torch
 from TTS.vc.modules.freevc.speaker_encoder.speaker_encoder import SpeakerEncoder as SpeakerEncoderEx
 from TTS.vc.modules.freevc.wavlm import get_wavlm
+from TTS.vocoder.models.hifigan_generator import get_padding
+
+logger = logging.getLogger(__name__)
 
 
 class ResidualCouplingBlock(nn.Module):
@@ -77,7 +82,7 @@ class Encoder(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths, g=None):
-        x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(x.dtype)
+        x_mask = torch.unsqueeze(sequence_mask(x_lengths, x.size(2)), 1).to(x.dtype)
         x = self.pre(x) * x_mask
         x = self.enc(x, x_mask, g=g)
         stats = self.proj(x) * x_mask
@@ -152,7 +157,7 @@ class Generator(torch.nn.Module):
         return x
 
     def remove_weight_norm(self):
-        print("Removing weight norm...")
+        logger.info("Removing weight norm...")
         for l in self.ups:
             remove_parametrizations(l, "weight")
         for l in self.resblocks:
@@ -164,7 +169,7 @@ class DiscriminatorP(torch.nn.Module):
         super(DiscriminatorP, self).__init__()
         self.period = period
         self.use_spectral_norm = use_spectral_norm
-        norm_f = weight_norm if use_spectral_norm == False else spectral_norm
+        norm_f = weight_norm if use_spectral_norm is False else spectral_norm
         self.convs = nn.ModuleList(
             [
                 norm_f(Conv2d(1, 32, (kernel_size, 1), (stride, 1), padding=(get_padding(kernel_size, 1), 0))),
@@ -201,7 +206,7 @@ class DiscriminatorP(torch.nn.Module):
 class DiscriminatorS(torch.nn.Module):
     def __init__(self, use_spectral_norm=False):
         super(DiscriminatorS, self).__init__()
-        norm_f = weight_norm if use_spectral_norm == False else spectral_norm
+        norm_f = weight_norm if use_spectral_norm is False else spectral_norm
         self.convs = nn.ModuleList(
             [
                 norm_f(Conv1d(1, 16, 15, 1, padding=7)),
@@ -377,9 +382,9 @@ class FreeVC(BaseVC):
 
     def load_pretrained_speaker_encoder(self):
         """Load pretrained speaker encoder model as mentioned in the paper."""
-        print(" > Loading pretrained speaker encoder model ...")
+        logger.info("Loading pretrained speaker encoder model ...")
         self.enc_spk_ex = SpeakerEncoderEx(
-            "https://github.com/coqui-ai/TTS/releases/download/v0.13.0_models/speaker_encoder.pt"
+            "https://github.com/coqui-ai/TTS/releases/download/v0.13.0_models/speaker_encoder.pt", device=self.device
         )
 
     def init_multispeaker(self, config: Coqpit):
@@ -468,7 +473,7 @@ class FreeVC(BaseVC):
         Returns:
             torch.Tensor: Output tensor.
         """
-        if c_lengths == None:
+        if c_lengths is None:
             c_lengths = (torch.ones(c.size(0)) * c.size(-1)).to(c.device)
         if not self.use_spk:
             g = self.enc_spk.embed_utterance(mel)
@@ -544,11 +549,10 @@ class FreeVC(BaseVC):
         audio = audio[0][0].data.cpu().float().numpy()
         return audio
 
-    def eval_step():
-        ...
+    def eval_step(): ...
 
     @staticmethod
-    def init_from_config(config: FreeVCConfig, samples: Union[List[List], List[Dict]] = None, verbose=True):
+    def init_from_config(config: FreeVCConfig, samples: Union[List[List], List[Dict]] = None):
         model = FreeVC(config)
         return model
 
@@ -558,5 +562,4 @@ class FreeVC(BaseVC):
         if eval:
             self.eval()
 
-    def train_step():
-        ...
+    def train_step(): ...

@@ -5,14 +5,14 @@
 User friendly installation. Recommended only for synthesizing voice.
 
 ```bash
-$ pip install TTS
+$ pip install coqui-tts
 ```
 
 Developer friendly installation.
 
 ```bash
-$ git clone https://github.com/coqui-ai/TTS
-$ cd TTS
+$ git clone https://github.com/idiap/coqui-ai-TTS
+$ cd coqui-ai-TTS
 $ pip install -e .
 ```
 
@@ -109,14 +109,15 @@ $ tts -h # see the help
 $ tts --list_models  # list the available models.
 ```
 
-![cli.gif](https://github.com/coqui-ai/TTS/raw/main/images/tts_cli.gif)
+![cli.gif](https://github.com/idiap/coqui-ai-TTS/raw/main/images/tts_cli.gif)
 
 
-You can call `tts-server` to start a local demo server that you can open it on
-your favorite web browser and 🗣️.
+You can call `tts-server` to start a local demo server that you can open on
+your favorite web browser and 🗣️ (make sure to install the additional
+dependencies with `pip install coqui-tts[server]`).
 
 ```bash
 $ tts-server -h # see the help
 $ tts-server --list_models  # list the available models.
 ```
-![server.gif](https://github.com/coqui-ai/TTS/raw/main/images/demo_server.gif)
+![server.gif](https://github.com/idiap/coqui-ai-TTS/raw/main/images/demo_server.gif)

@@ -2,10 +2,10 @@ import os
 import unittest
 
 import torch
+from trainer.generic_utils import count_parameters
 
 from tests import get_tests_input_path
-from TTS.vc.configs.freevc_config import FreeVCConfig
-from TTS.vc.models.freevc import FreeVC
+from TTS.vc.models.freevc import FreeVC, FreeVCConfig
 
 # pylint: disable=unused-variable
 # pylint: disable=no-self-use
@@ -18,11 +18,6 @@ c = FreeVCConfig()
 
 WAV_FILE = os.path.join(get_tests_input_path(), "example_1.wav")
 BATCH_SIZE = 3
-
-
-def count_parameters(model):
-    r"""Count number of trainable parameters in a network"""
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 class TestFreeVC(unittest.TestCase):
@@ -116,20 +111,14 @@ class TestFreeVC(unittest.TestCase):
             output_wav.shape[0] + config.audio.hop_length == source_wav.shape[0]
         ), f"{output_wav.shape} != {source_wav.shape}"
 
-    def test_train_step(self):
-        ...
+    def test_train_step(self): ...
 
-    def test_train_eval_log(self):
-        ...
+    def test_train_eval_log(self): ...
 
-    def test_test_run(self):
-        ...
+    def test_test_run(self): ...
 
-    def test_load_checkpoint(self):
-        ...
+    def test_load_checkpoint(self): ...
 
-    def test_get_criterion(self):
-        ...
+    def test_get_criterion(self): ...
 
-    def test_init_from_config(self):
-        ...
+    def test_init_from_config(self): ...

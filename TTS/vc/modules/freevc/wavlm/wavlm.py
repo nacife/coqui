@@ -155,7 +155,9 @@ def compute_mask_indices(
 
 class WavLMConfig:
     def __init__(self, cfg=None):
-        self.extractor_mode: str = "default"  # mode for feature extractor. default has a single group norm with d groups in the first conv block, whereas layer_norm has layer norms in every block (meant to use with normalize=True)
+        self.extractor_mode: str = (
+            "default"  # mode for feature extractor. default has a single group norm with d groups in the first conv block, whereas layer_norm has layer norms in every block (meant to use with normalize=True)
+        )
         self.encoder_layers: int = 12  # num encoder layers in the transformer
 
         self.encoder_embed_dim: int = 768  # encoder embedding dimension
@@ -164,7 +166,9 @@ class WavLMConfig:
         self.activation_fn: str = "gelu"  # activation function to use
 
         self.layer_norm_first: bool = False  # apply layernorm first in the transformer
-        self.conv_feature_layers: str = "[(512,10,5)] + [(512,3,2)] * 4 + [(512,2,2)] * 2"  # string describing convolutional feature extraction layers in form of a python list that contains [(dim, kernel_size, stride), ...]
+        self.conv_feature_layers: str = (
+            "[(512,10,5)] + [(512,3,2)] * 4 + [(512,2,2)] * 2"  # string describing convolutional feature extraction layers in form of a python list that contains [(dim, kernel_size, stride), ...]
+        )
         self.conv_bias: bool = False  # include bias in conv encoder
         self.feature_grad_mult: float = 1.0  # multiply feature extractor var grads by this
 
@@ -387,7 +391,7 @@ class ConvFeatureExtractionModel(nn.Module):
                 nn.init.kaiming_normal_(conv.weight)
                 return conv
 
-            assert (is_layer_norm and is_group_norm) == False, "layer norm and group norm are exclusive"
+            assert (is_layer_norm and is_group_norm) is False, "layer norm and group norm are exclusive"
 
             if is_layer_norm:
                 return nn.Sequential(

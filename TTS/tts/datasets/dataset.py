@@ -1,11 +1,13 @@
 import base64
 import collections
+import logging
 import os
 import random
 from typing import Dict, List, Union
 
 import numpy as np
 import torch
+import torchaudio
 import tqdm
 from torch.utils.data import Dataset
 
@@ -13,7 +15,7 @@ from TTS.tts.utils.data import prepare_data, prepare_stop_target, prepare_tensor
 from TTS.utils.audio import AudioProcessor
 from TTS.utils.audio.numpy_transforms import compute_energy as calculate_energy
 
-import mutagen
+logger = logging.getLogger(__name__)
 
 # to prevent too many open files error as suggested here
 # https://github.com/pytorch/pytorch/issues/11201#issuecomment-421146936
@@ -44,13 +46,15 @@ def string2filename(string):
     return filename
 
 
-def get_audio_size(audiopath):
+def get_audio_size(audiopath) -> int:
+    """Return the number of samples in the audio file."""
     extension = audiopath.rpartition(".")[-1].lower()
     if extension not in {"mp3", "wav", "flac"}:
-        raise RuntimeError(f"The audio format {extension} is not supported, please convert the audio files to mp3, flac, or wav format!")
+        raise RuntimeError(
+            f"The audio format {extension} is not supported, please convert the audio files to mp3, flac, or wav format!"
+        )
 
-    audio_info = mutagen.File(audiopath).info
-    return int(audio_info.length * audio_info.sample_rate)
+    return torchaudio.info(audiopath).num_frames
 
 
 class TTSDataset(Dataset):
@@ -78,7 +82,6 @@ class TTSDataset(Dataset):
         language_id_mapping: Dict = None,
         use_noise_augment: bool = False,
         start_by_longest: bool = False,
-        verbose: bool = False,
     ):
         """Generic 📂 data loader for `tts` models. It is configurable for different outputs and needs.
 
@@ -136,8 +139,6 @@ class TTSDataset(Dataset):
             use_noise_augment (bool): Enable adding random noise to wav for augmentation. Defaults to False.
 
             start_by_longest (bool): Start by longest sequence. It is especially useful to check OOM. Defaults to False.
-
-            verbose (bool): Print diagnostic information. Defaults to false.
         """
         super().__init__()
         self.batch_group_size = batch_group_size
@@ -161,7 +162,6 @@ class TTSDataset(Dataset):
         self.use_noise_augment = use_noise_augment
         self.start_by_longest = start_by_longest
 
-        self.verbose = verbose
         self.rescue_item_idx = 1
         self.pitch_computed = False
         self.tokenizer = tokenizer
@@ -179,8 +179,7 @@ class TTSDataset(Dataset):
             self.energy_dataset = EnergyDataset(
                 self.samples, self.ap, cache_path=energy_cache_path, precompute_num_workers=precompute_num_workers
             )
-        if self.verbose:
-            self.print_logs()
+        self.print_logs()
 
     @property
     def lengths(self):
@@ -213,11 +212,10 @@ class TTSDataset(Dataset):
 
     def print_logs(self, level: int = 0) -> None:
         indent = "\t" * level
-        print("\n")
-        print(f"{indent}> DataLoader initialization")
-        print(f"{indent}| > Tokenizer:")
+        logger.info("%sDataLoader initialization", indent)
+        logger.info("%s| Tokenizer:", indent)
         self.tokenizer.print_logs(level + 1)
-        print(f"{indent}| > Number of instances : {len(self.samples)}")
+        logger.info("%s| Number of instances : %d", indent, len(self.samples))
 
     def load_wav(self, filename):
         waveform = self.ap.load_wav(filename)
@@ -389,17 +387,15 @@ class TTSDataset(Dataset):
         text_lengths = [s["text_length"] for s in samples]
         self.samples = samples
 
-        if self.verbose:
-            print(" | > Preprocessing samples")
-            print(" | > Max text length: {}".format(np.max(text_lengths)))
-            print(" | > Min text length: {}".format(np.min(text_lengths)))
-            print(" | > Avg text length: {}".format(np.mean(text_lengths)))
-            print(" | ")
-            print(" | > Max audio length: {}".format(np.max(audio_lengths)))
-            print(" | > Min audio length: {}".format(np.min(audio_lengths)))
-            print(" | > Avg audio length: {}".format(np.mean(audio_lengths)))
-            print(f" | > Num. instances discarded samples: {len(ignore_idx)}")
-            print(" | > Batch group size: {}.".format(self.batch_group_size))
+        logger.info("Preprocessing samples")
+        logger.info("Max text length: {}".format(np.max(text_lengths)))
+        logger.info("Min text length: {}".format(np.min(text_lengths)))
+        logger.info("Avg text length: {}".format(np.mean(text_lengths)))
+        logger.info("Max audio length: {}".format(np.max(audio_lengths)))
+        logger.info("Min audio length: {}".format(np.min(audio_lengths)))
+        logger.info("Avg audio length: {}".format(np.mean(audio_lengths)))
+        logger.info("Num. instances discarded samples: %d", len(ignore_idx))
+        logger.info("Batch group size: {}.".format(self.batch_group_size))
 
     @staticmethod
     def _sort_batch(batch, text_lengths):
@@ -456,9 +452,11 @@ class TTSDataset(Dataset):
 
             # lengths adjusted by the reduction factor
             mel_lengths_adjusted = [
-                m.shape[1] + (self.outputs_per_step - (m.shape[1] % self.outputs_per_step))
-                if m.shape[1] % self.outputs_per_step
-                else m.shape[1]
+                (
+                    m.shape[1] + (self.outputs_per_step - (m.shape[1] % self.outputs_per_step))
+                    if m.shape[1] % self.outputs_per_step
+                    else m.shape[1]
+                )
                 for m in mel
             ]
 
@@ -640,7 +638,7 @@ class PhonemeDataset(Dataset):
 
         We use pytorch dataloader because we are lazy.
         """
-        print("[*] Pre-computing phonemes...")
+        logger.info("Pre-computing phonemes...")
         with tqdm.tqdm(total=len(self)) as pbar:
             batch_size = num_workers if num_workers > 0 else 1
             dataloder = torch.utils.data.DataLoader(
@@ -662,11 +660,10 @@ class PhonemeDataset(Dataset):
 
     def print_logs(self, level: int = 0) -> None:
         indent = "\t" * level
-        print("\n")
-        print(f"{indent}> PhonemeDataset ")
-        print(f"{indent}| > Tokenizer:")
+        logger.info("%sPhonemeDataset", indent)
+        logger.info("%s| Tokenizer:", indent)
         self.tokenizer.print_logs(level + 1)
-        print(f"{indent}| > Number of instances : {len(self.samples)}")
+        logger.info("%s| Number of instances : %d", indent, len(self.samples))
 
 
 class F0Dataset:
@@ -698,14 +695,12 @@ class F0Dataset:
         samples: Union[List[List], List[Dict]],
         ap: "AudioProcessor",
         audio_config=None,  # pylint: disable=unused-argument
-        verbose=False,
         cache_path: str = None,
         precompute_num_workers=0,
         normalize_f0=True,
     ):
         self.samples = samples
         self.ap = ap
-        self.verbose = verbose
         self.cache_path = cache_path
         self.normalize_f0 = normalize_f0
         self.pad_id = 0.0
@@ -729,7 +724,7 @@ class F0Dataset:
         return len(self.samples)
 
     def precompute(self, num_workers=0):
-        print("[*] Pre-computing F0s...")
+        logger.info("Pre-computing F0s...")
         with tqdm.tqdm(total=len(self)) as pbar:
             batch_size = num_workers if num_workers > 0 else 1
             # we do not normalize at preproessing
@@ -816,9 +811,8 @@ class F0Dataset:
 
     def print_logs(self, level: int = 0) -> None:
         indent = "\t" * level
-        print("\n")
-        print(f"{indent}> F0Dataset ")
-        print(f"{indent}| > Number of instances : {len(self.samples)}")
+        logger.info("%sF0Dataset", indent)
+        logger.info("%s| Number of instances : %d", indent, len(self.samples))
 
 
 class EnergyDataset:
@@ -849,14 +843,12 @@ class EnergyDataset:
         self,
         samples: Union[List[List], List[Dict]],
         ap: "AudioProcessor",
-        verbose=False,
         cache_path: str = None,
         precompute_num_workers=0,
         normalize_energy=True,
     ):
         self.samples = samples
         self.ap = ap
-        self.verbose = verbose
         self.cache_path = cache_path
         self.normalize_energy = normalize_energy
         self.pad_id = 0.0
@@ -880,7 +872,7 @@ class EnergyDataset:
         return len(self.samples)
 
     def precompute(self, num_workers=0):
-        print("[*] Pre-computing energys...")
+        logger.info("Pre-computing energys...")
         with tqdm.tqdm(total=len(self)) as pbar:
             batch_size = num_workers if num_workers > 0 else 1
             # we do not normalize at preproessing
@@ -968,6 +960,5 @@ class EnergyDataset:
 
     def print_logs(self, level: int = 0) -> None:
         indent = "\t" * level
-        print("\n")
-        print(f"{indent}> energyDataset ")
-        print(f"{indent}| > Number of instances : {len(self.samples)}")
+        logger.info("%senergyDataset")
+        logger.info("%s| Number of instances : %d", indent, len(self.samples))

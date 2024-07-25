@@ -69,14 +69,12 @@ tts --model_name  tts_models/multilingual/multi-dataset/bark \
 --text "This is an example." \
 --out_path "output.wav" \
 --voice_dir bark_voices/ \
---speaker_idx "ljspeech" \
---progress_bar True
+--speaker_idx "ljspeech"
 
 # Random voice generation
 tts --model_name  tts_models/multilingual/multi-dataset/bark \
 --text "This is an example." \
---out_path "output.wav" \
---progress_bar True
+--out_path "output.wav"
 ```
 
 

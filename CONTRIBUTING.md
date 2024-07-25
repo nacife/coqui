@@ -2,7 +2,7 @@
 
 Welcome to the 🐸TTS!
 
-This repository is governed by [the Contributor Covenant Code of Conduct](https://github.com/coqui-ai/TTS/blob/main/CODE_OF_CONDUCT.md).
+This repository is governed by [the Contributor Covenant Code of Conduct](https://github.com/idiap/coqui-ai-TTS/blob/main/CODE_OF_CONDUCT.md).
 
 ## Where to start.
 We welcome everyone who likes to contribute to 🐸TTS.
@@ -15,13 +15,13 @@ If you like to contribute code, squash a bug but if you don't know where to star
 
     You can pick something out of our road map. We keep the progess of the project in this simple issue thread. It has new model proposals or developmental updates etc.
 
-- [Github Issues Tracker](https://github.com/coqui-ai/TTS/issues)
+- [Github Issues Tracker](https://github.com/idiap/coqui-ai-TTS/issues)
 
     This is a place to find feature requests, bugs.
 
     Issues with the ```good first issue``` tag are good place for beginners to take on.
 
-- ✨**PR**✨ [pages](https://github.com/coqui-ai/TTS/pulls) with the ```🚀new version``` tag.
+- ✨**PR**✨ [pages](https://github.com/idiap/coqui-ai-TTS/pulls) with the ```🚀new version``` tag.
 
     We list all the target improvements for the next version. You can pick one of them and start contributing.
 
@@ -46,21 +46,21 @@ Let us know if you encounter a problem along the way.
 
 The following steps are tested on an Ubuntu system.
 
-1. Fork 🐸TTS[https://github.com/coqui-ai/TTS] by clicking the fork button at the top right corner of the project page.
+1. Fork 🐸TTS[https://github.com/idiap/coqui-ai-TTS] by clicking the fork button at the top right corner of the project page.
 
 2. Clone 🐸TTS and add the main repo as a new remote named ```upstream```.
 
     ```bash
-    $ git clone git@github.com:<your Github name>/TTS.git
-    $ cd TTS
-    $ git remote add upstream https://github.com/coqui-ai/TTS.git
+    $ git clone git@github.com:<your Github name>/coqui-ai-TTS.git
+    $ cd coqui-ai-TTS
+    $ git remote add upstream https://github.com/idiap/coqui-ai-TTS.git
     ```
 
 3. Install 🐸TTS for development.
 
     ```bash
     $ make system-deps  # intended to be used on Ubuntu (Debian). Let us know if you have a different OS.
-    $ make install
+    $ make install_dev
     ```
 
 4. Create a new branch with an informative name for your goal.
@@ -82,13 +82,13 @@ The following steps are tested on an Ubuntu system.
     $ make test_all  # run all the tests, report all the errors
     ```
 
-9. Format your code. We use ```black``` for code and ```isort``` for ```import``` formatting.
+9. Format your code. We use ```black``` for code formatting.
 
     ```bash
     $ make style
     ```
 
-10. Run the linter and correct the issues raised. We use ```pylint``` for linting.  It helps to enforce a coding standard, offers simple refactoring suggestions.
+10. Run the linter and correct the issues raised. We use ```ruff``` for linting.  It helps to enforce a coding standard, offers simple refactoring suggestions.
 
     ```bash
     $ make lint
@@ -105,7 +105,7 @@ The following steps are tested on an Ubuntu system.
 
     ```bash
     $ git fetch upstream
-    $ git rebase upstream/master
+    $ git rebase upstream/main
     # or for the development version
     $ git rebase upstream/dev
     ```
@@ -124,7 +124,7 @@ The following steps are tested on an Ubuntu system.
 
 13. Let's discuss until it is perfect. 💪
 
-    We might ask you for certain changes that would appear in the ✨**PR**✨'s page under 🐸TTS[https://github.com/coqui-ai/TTS/pulls].
+    We might ask you for certain changes that would appear in the ✨**PR**✨'s page under 🐸TTS[https://github.com/idiap/coqui-ai-TTS/pulls].
 
 14. Once things look perfect, We merge it to the ```dev``` branch and make it ready for the next version.
 
@@ -132,14 +132,14 @@ The following steps are tested on an Ubuntu system.
 
 If you prefer working within a Docker container as your development environment, you can do the following:
 
-1. Fork 🐸TTS[https://github.com/coqui-ai/TTS] by clicking the fork button at the top right corner of the project page.
+1. Fork 🐸TTS[https://github.com/idiap/coqui-ai-TTS] by clicking the fork button at the top right corner of the project page.
 
 2. Clone 🐸TTS and add the main repo as a new remote named ```upsteam```.
 
     ```bash
-    $ git clone git@github.com:<your Github name>/TTS.git
-    $ cd TTS
-    $ git remote add upstream https://github.com/coqui-ai/TTS.git
+    $ git clone git@github.com:<your Github name>/coqui-ai-TTS.git
+    $ cd coqui-ai-TTS
+    $ git remote add upstream https://github.com/idiap/coqui-ai-TTS.git
     ```
 
 3. Build the Docker Image as your development environment (it installs all of the dependencies for you):

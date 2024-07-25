@@ -3,6 +3,7 @@
 
 import argparse
 import glob
+import logging
 import os
 
 import numpy as np
@@ -12,10 +13,13 @@ from tqdm import tqdm
 from TTS.config import load_config
 from TTS.tts.datasets import load_tts_samples
 from TTS.utils.audio import AudioProcessor
+from TTS.utils.generic_utils import ConsoleFormatter, setup_logger
 
 
 def main():
     """Run preprocessing process."""
+    setup_logger("TTS", level=logging.INFO, screen=True, formatter=ConsoleFormatter())
+
     parser = argparse.ArgumentParser(description="Compute mean and variance of spectrogtram features.")
     parser.add_argument("config_path", type=str, help="TTS config file path to define audio processin parameters.")
     parser.add_argument("out_path", type=str, help="save path (directory and filename).")

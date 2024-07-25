@@ -1,9 +1,11 @@
+import logging
 import os
 from typing import Dict, List, Union
 
 import torch
 from coqpit import Coqpit
 from torch import nn
+from trainer.io import load_fsspec
 from trainer.logging.tensorboard_logger import TensorboardLogger
 
 from TTS.tts.layers.overflow.common_layers import Encoder, OverflowUtils
@@ -18,7 +20,8 @@ from TTS.tts.utils.speakers import SpeakerManager
 from TTS.tts.utils.text.tokenizer import TTSTokenizer
 from TTS.tts.utils.visual import plot_alignment, plot_spectrogram
 from TTS.utils.generic_utils import format_aux_input
-from TTS.utils.io import load_fsspec
+
+logger = logging.getLogger(__name__)
 
 
 class Overflow(BaseTTS):
@@ -250,18 +253,17 @@ class Overflow(BaseTTS):
         return NLLLoss()
 
     @staticmethod
-    def init_from_config(config: "OverFlowConfig", samples: Union[List[List], List[Dict]] = None, verbose=True):
+    def init_from_config(config: "OverFlowConfig", samples: Union[List[List], List[Dict]] = None):
         """Initiate model from config
 
         Args:
             config (VitsConfig): Model config.
             samples (Union[List[List], List[Dict]]): Training samples to parse speaker ids for training.
                 Defaults to None.
-            verbose (bool): If True, print init messages. Defaults to True.
         """
         from TTS.utils.audio import AudioProcessor
 
-        ap = AudioProcessor.init_from_config(config, verbose)
+        ap = AudioProcessor.init_from_config(config)
         tokenizer, new_config = TTSTokenizer.init_from_config(config)
         speaker_manager = SpeakerManager.init_from_config(config, samples)
         return Overflow(new_config, ap, tokenizer, speaker_manager)
@@ -282,14 +284,17 @@ class Overflow(BaseTTS):
             dataloader = trainer.get_train_dataloader(
                 training_assets=None, samples=trainer.train_samples, verbose=False
             )
-            print(
-                f" | > Data parameters not found for: {trainer.config.mel_statistics_parameter_path}. Computing mel normalization parameters..."
+            logger.info(
+                "Data parameters not found for: %s. Computing mel normalization parameters...",
+                trainer.config.mel_statistics_parameter_path,
             )
             data_mean, data_std, init_transition_prob = OverflowUtils.get_data_parameters_for_flat_start(
                 dataloader, trainer.config.out_channels, trainer.config.state_per_phone
             )
-            print(
-                f" | > Saving data parameters to: {trainer.config.mel_statistics_parameter_path}: value: {data_mean, data_std, init_transition_prob}"
+            logger.info(
+                "Saving data parameters to: %s: value: %s",
+                trainer.config.mel_statistics_parameter_path,
+                (data_mean, data_std, init_transition_prob),
             )
             statistics = {
                 "mean": data_mean.item(),
@@ -299,8 +304,9 @@ class Overflow(BaseTTS):
             torch.save(statistics, trainer.config.mel_statistics_parameter_path)
 
         else:
-            print(
-                f" | > Data parameters found for: {trainer.config.mel_statistics_parameter_path}. Loading mel normalization parameters..."
+            logger.info(
+                "Data parameters found for: %s. Loading mel normalization parameters...",
+                trainer.config.mel_statistics_parameter_path,
             )
             statistics = torch.load(trainer.config.mel_statistics_parameter_path)
             data_mean, data_std, init_transition_prob = (
@@ -308,7 +314,7 @@ class Overflow(BaseTTS):
                 statistics["std"],
                 statistics["init_transition_prob"],
             )
-            print(f" | > Data parameters loaded with value: {data_mean, data_std, init_transition_prob}")
+            logger.info("Data parameters loaded with value: %s", (data_mean, data_std, init_transition_prob))
 
         trainer.config.flat_start_params["transition_p"] = (
             init_transition_prob.item() if torch.is_tensor(init_transition_prob) else init_transition_prob
@@ -334,7 +340,7 @@ class Overflow(BaseTTS):
         }
 
         # sample one item from the batch -1 will give the smalles item
-        print(" | > Synthesising audio from the model...")
+        logger.info("Synthesising audio from the model...")
         inference_output = self.inference(
             batch["text_input"][-1].unsqueeze(0), aux_input={"x_lengths": batch["text_lengths"][-1].unsqueeze(0)}
         )

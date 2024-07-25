@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 from typing import Tuple
 
@@ -6,6 +7,8 @@ import numpy as np
 import scipy
 import soundfile as sf
 from librosa import magphase, pyin
+
+logger = logging.getLogger(__name__)
 
 # For using kwargs
 # pylint: disable=unused-argument
@@ -222,7 +225,7 @@ def griffin_lim(*, spec: np.ndarray = None, num_iter=60, **kwargs) -> np.ndarray
     S_complex = np.abs(spec).astype(complex)
     y = istft(y=S_complex * angles, **kwargs)
     if not np.isfinite(y).all():
-        print(" [!] Waveform is not finite everywhere. Skipping the GL.")
+        logger.warning("Waveform is not finite everywhere. Skipping the GL.")
         return np.array([0.0])
     for _ in range(num_iter):
         angles = np.exp(1j * np.angle(stft(y=y, **kwargs)))

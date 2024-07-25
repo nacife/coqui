@@ -145,10 +145,9 @@ def average_over_durations(values, durs):
     return avg
 
 
-def convert_pad_shape(pad_shape):
+def convert_pad_shape(pad_shape: list[list]) -> list:
     l = pad_shape[::-1]
-    pad_shape = [item for sublist in l for item in sublist]
-    return pad_shape
+    return [item for sublist in l for item in sublist]
 
 
 def generate_path(duration, mask):
